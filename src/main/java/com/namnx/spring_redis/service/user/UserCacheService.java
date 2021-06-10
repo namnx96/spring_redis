@@ -1,7 +1,9 @@
-package com.namnx.spring_redis.service;
+package com.namnx.spring_redis.service.user;
 
 import com.namnx.spring_redis.enums.RedisKey;
 import com.namnx.spring_redis.model.UserEntity;
+import com.namnx.spring_redis.repository.UserRepository;
+import com.namnx.spring_redis.service.RedisCacheUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,6 +20,9 @@ public class UserCacheService {
 
     @Autowired
     private RedisCacheUtils<UserEntity, RedisTemplate<String, UserEntity>> cacheUtils;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private static final List<UserEntity> userEntities = new ArrayList<>();
 
@@ -44,11 +49,18 @@ public class UserCacheService {
     }
 
     public UserEntity getByIdFromCache(Long userId) {
-        return cacheUtils.findBySpecialKey(RedisKey.REDIS_USER_ID_CACHE, userId);
+        return cacheUtils.findBySpecialKey(
+                RedisKey.REDIS_USER_ID_CACHE, userId,
+                id -> userRepository.findById(id)
+        );
     }
 
     public UserEntity getByEmailFromCache(String email) {
-        return cacheUtils.findBySpecialKey(RedisKey.REDIS_USER_EMAIL_CACHE, email);
+        return cacheUtils.findBySpecialKey(
+                RedisKey.REDIS_USER_EMAIL_CACHE,
+                email,
+                emailKey -> userRepository.findByEmail(emailKey)
+        );
     }
 
     public void deleteByEmailFromCache(String email) {
