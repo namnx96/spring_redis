@@ -1,7 +1,7 @@
 package com.namnx.spring_redis.web;
 
 import com.namnx.spring_redis.model.UserEntity;
-import com.namnx.spring_redis.service.user.UserCacheService;
+import com.namnx.spring_redis.service.cache.user.UserCacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

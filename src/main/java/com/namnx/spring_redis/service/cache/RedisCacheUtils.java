@@ -1,6 +1,6 @@
-package com.namnx.spring_redis.service;
+package com.namnx.spring_redis.service.cache;
 
-import com.namnx.spring_redis.enums.RedisKey;
+import com.namnx.spring_redis.enums.RedisCacheKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.HashOperations;
@@ -19,57 +19,57 @@ public class RedisCacheUtils<E, R extends RedisAccessor & RedisOperations<String
     private R redisTemplate;
 
     public <HK> void buildCacheAllData(Collection<E> entities,
-                                       RedisKey redisKey,
+                                       RedisCacheKey redisCacheKey,
                                        Function<E, HK> funcGetHashKey) {
-        redisTemplate.delete(redisKey.toString());
+        redisTemplate.delete(redisCacheKey.toString());
         for (E entity : entities) {
             redisTemplate
                     .opsForHash()
-                    .put(redisKey.toString(), funcGetHashKey.apply(entity).toString(), entity);
+                    .put(redisCacheKey.toString(), funcGetHashKey.apply(entity).toString(), entity);
         }
     }
 
-    public Collection<E> getAllFromCache(RedisKey redisKey) {
+    public Collection<E> getAllFromCache(RedisCacheKey redisCacheKey) {
         HashOperations<String, String, E> hashOperations = redisTemplate.opsForHash();
-        return hashOperations.values(redisKey.toString());
+        return hashOperations.values(redisCacheKey.toString());
     }
 
-    public <HK> E findBySpecialKey(RedisKey redisKey, HK hashKey,
+    public <HK> E findBySpecialKey(RedisCacheKey redisCacheKey, HK hashKey,
                                    Function<HK, E> funcGetObjFromDB) {
         HashOperations<String, String, E> hashOperations = redisTemplate.opsForHash();
-        E e = hashOperations.get(redisKey.toString(), hashKey.toString());
+        E e = hashOperations.get(redisCacheKey.toString(), hashKey.toString());
 
         if (e == null) {
-            log.info("data with cache key: {}, hashKey: {} return null.", redisKey, hashKey);
+            log.info("data with cache key: {}, hashKey: {} return null.", redisCacheKey, hashKey);
             //when not stored in cache, start to find in DB and update cache
             e = funcGetObjFromDB.apply(hashKey);
             if (e != null) {
-                log.info("update cache with data from DB. cache key: {}, hashKey: {}", redisKey, hashKey);
-                hashOperations.put(redisKey.toString(), hashKey.toString(), e);
+                log.info("update cache with data from DB. cache key: {}, hashKey: {}", redisCacheKey, hashKey);
+                hashOperations.put(redisCacheKey.toString(), hashKey.toString(), e);
             }
         }
         return e;
     }
 
-    public <HK> void deleteFromCache(RedisKey redisKey, HK hashKey) {
+    public <HK> void deleteFromCache(RedisCacheKey redisCacheKey, HK hashKey) {
         redisTemplate
                 .opsForHash()
-                .delete(redisKey.toString(), hashKey.toString());
+                .delete(redisCacheKey.toString(), hashKey.toString());
     }
 
-    public <HK> void deleteFromCache(RedisKey redisKey, Collection<HK> hashKeysToDelete) {
+    public <HK> void deleteFromCache(RedisCacheKey redisCacheKey, Collection<HK> hashKeysToDelete) {
         redisTemplate
                 .opsForHash()
-                .delete(redisKey.toString(),
+                .delete(redisCacheKey.toString(),
                         hashKeysToDelete
                                 .stream()
                                 .map(Object::toString).toArray()
                 );
     }
 
-    public <HK> void updateCache(RedisKey redisKey, E e, Function<E, HK> funcGetHashKey) {
+    public <HK> void updateCache(RedisCacheKey redisCacheKey, E e, Function<E, HK> funcGetHashKey) {
         redisTemplate
                 .opsForHash()
-                .put(redisKey.toString(), funcGetHashKey.apply(e).toString(), e);
+                .put(redisCacheKey.toString(), funcGetHashKey.apply(e).toString(), e);
     }
 }
